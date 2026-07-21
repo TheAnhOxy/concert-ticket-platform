@@ -74,7 +74,7 @@ services:
       - SPRING_DATA_REDIS_HOST=concert-redis
       - SPRING_DATA_REDIS_PORT=6379
     depends_on:
-      - concert-core-service
+      - core-service      # <-- Sửa thành core-service (hoặc concert-core-service tùy tên bạn đặt ở dưới)
       - concert-redis
     networks:
       - concert-net
