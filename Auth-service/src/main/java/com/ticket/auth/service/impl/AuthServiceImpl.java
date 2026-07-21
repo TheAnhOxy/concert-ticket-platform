@@ -1,11 +1,21 @@
 package com.ticket.auth.service.impl;
 
 
+import com.ticket.auth.dto.request.LoginRequest;
+import com.ticket.auth.dto.request.RefreshTokenRequest;
+import com.ticket.auth.dto.request.RegisterRequest;
+import com.ticket.auth.dto.response.LoginResponse;
+import com.ticket.auth.enums.Role;
 import com.ticket.auth.repository.UserRepository;
 import com.ticket.auth.security.JwtTokenProvider;
+import com.ticket.auth.service.AuthService;
+import com.ticket.auth.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,30 +29,39 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final ModelMapper modelMapper;
-    private final StringRedisTemplate redisTemplate; // Dùng để lưu blacklist khi logout hoặc quản lý refresh token
+    private final StringRedisTemplate redisTemplate;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        // Tìm user theo username hoặc email
-        User user = userRepository.findByUsernameOrEmail(request.getUsernameOrEmail(), request.getUsernameOrEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid username/email or password"));
-
-        // Kiểm tra mật khẩu
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        // Spring Security sẽ tự động gọi UserDetailsService và PasswordEncoder để kiểm tra
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsernameOrEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (Exception e) {
             throw new RuntimeException("Invalid username/email or password");
         }
+
+        // Lấy thông tin user sau khi xác thực thành công
+        User user = userRepository.findByUsernameOrEmail(request.getUsernameOrEmail(), request.getUsernameOrEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!user.getIsActive()) {
             throw new RuntimeException("Account is deactivated");
         }
 
-        // Sinh token
+        // Sinh cặp token JWT (Access Token & Refresh Token)
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getRole().name());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername(), user.getRole().name());
 
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .tokenType("Bearer")
                 .username(user.getUsername())
                 .role(user.getRole().name())
                 .build();
@@ -60,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
         // Sử dụng ModelMapper hoặc khởi tạo thủ công bằng Builder
         User user = modelMapper.map(request, User.class);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.ROLE_CUSTOMER); // Mặc định đăng ký là Customer
+        user.setRole(Role.ROLE_CUSTOMER);
         user.setIsActive(true);
 
         userRepository.save(user);

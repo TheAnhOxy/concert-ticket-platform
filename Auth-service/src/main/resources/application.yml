@@ -7,7 +7,25 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: jdbc:postgresql://concert-postgres:5432/auth_db
+    url: jdbc:postgresql://ep-hidden-bar-azmsarvo-pooler.c-3.ap-southeast-1.aws.neon.tech/auth_db?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_4NeM5xPfaAsY
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+jwt:
+  secret: ${JWT_SECRET:ChangeMeToA32ByteMinimumSecretKey!}
+  expiration: ${JWT_EXPIRATION:900000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 openapi:
   service:
@@ -25,11 +43,3 @@ springdoc:
 
   swagger-ui:
     path: /swagger-ui.html
-#eureka:
-#  client:
-#    service-url:
-#      defaultZone: http://localhost:8761/eureka/ # Địa chỉ của Eureka Server
-#    fetch-registry: true
-#    register-with-eureka: true
-#  instance:
-#    prefer-ip-address: true

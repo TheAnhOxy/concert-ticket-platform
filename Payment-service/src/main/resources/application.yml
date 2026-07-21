@@ -7,7 +7,20 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: jdbc:postgresql://concert-postgres:5432/payment_db
+    url: jdbc:postgresql://ep-hidden-bar-azmsarvo-pooler.c-3.ap-southeast-1.aws.neon.tech/payment_db?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_4NeM5xPfaAsY
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 openapi:
   service:
