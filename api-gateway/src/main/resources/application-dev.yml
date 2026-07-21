@@ -1,0 +1,122 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  devtools:
+    add-properties: true
+  cloud:
+    gateway:
+      routes:
+        - id:   auth-service
+          uri: http://localhost:8081
+#          uri: lb://IDENTITY-SERVICE
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - RewritePath=/api/v1/auth/(?<segment>.*), /${segment}
+#            - StripPrefix=2
+#            - name: Authentication
+#            - RewritePath=/tours/(?<segment>.*), /$\{segment}
+#            - CustomizeFilter
+        - id: core-service
+#          uri: ${CORE_SERVICE_URL:http://localhost:8082}
+          uri: http://localhost:8082
+#          uri: lb://core-service
+          predicates:
+            - Path=/api/v1/core/**
+          filters:
+            - RewritePath=/api/v1/core/(?<segment>.*), /${segment}
+#          filters:
+#            - RewritePath=/cores/(?<segment>.*), /$\{segment}
+#            - CustomizeFilter
+
+        - id: booking-service
+#          uri: ${BOOKING_SERVICE_URL:http://localhost:8084}
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/bookings/**
+          filters:
+#            - Authentication
+#          filters:
+#            - RewritePath=/bookings/(?<segment>.*), /$\{segment}
+#            - CustomizeFilter
+        - id: payment-service
+#          uri: ${PAYMENT_SERVICE_URL:http://localhost:8085}
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/payments/**
+          filters:
+#            - name: Authentication
+#            - RewritePath=/payments/(?<segment>.*), /$\{segment} # thay thế ký tự /order/ thành /
+        - id: notification-service
+#          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8087}
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/notification/**
+#          filters:
+#            - RewritePath=/notification/(?<segment>.*), /$\{segment} # thay thế ký tự /mail/ thành /
+#            - CustomizeFilter
+
+        # ===== SWAGGER API DOCS ROUTING =====
+        - id: auth-service-docs
+          uri: http://localhost:8081
+          predicates:
+            - Path=/v3/api-docs/auth-service
+          filters:
+            - SetPath=/v3/api-docs
+
+
+        - id: core-service-docs
+          uri: http://localhost:8082
+          predicates:
+            - Path=/v3/api-docs/core-service
+          filters:
+            - SetPath=/v3/api-docs
+
+
+        - id: booking-service-docs
+          uri: http://localhost:8083
+          predicates:
+            - Path=/v3/api-docs/booking-service
+          filters:
+            - SetPath=/v3/api-docs
+
+
+        - id: payment-service-docs
+          uri: http://localhost:8084
+          predicates:
+            - Path=/v3/api-docs/payment-service
+          filters:
+            - SetPath=/v3/api-docs
+
+
+        - id: notification-service-docs
+          uri: http://localhost:8085
+          predicates:
+            - Path=/v3/api-docs/notification-service
+          filters:
+            - SetPath=/v3/api-docs
+
+
+
+springdoc:
+
+  swagger-ui:
+    path: /swagger-ui.html
+
+    urls:
+
+      - name: Auth Service
+        url: /v3/api-docs/auth-service
+
+      - name: Core Service
+        url: /v3/api-docs/core-service
+
+      - name: Booking Service
+        url: /v3/api-docs/booking-service
+
+      - name: Payment Service
+        url: /v3/api-docs/payment-service
+
+      - name: Notification Service
+        url: /v3/api-docs/notification-service

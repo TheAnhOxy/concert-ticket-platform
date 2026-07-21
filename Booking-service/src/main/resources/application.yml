@@ -1,0 +1,25 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: booking-service
+  profiles:
+    active: dev
+
+openapi:
+  service:
+    title: Booking Service API
+    version: 1.0.0
+
+logging:
+  level:
+    root: INFO
+    web: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
