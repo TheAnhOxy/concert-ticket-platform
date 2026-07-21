@@ -6,6 +6,8 @@ spring:
     name: booking-service
   profiles:
     active: dev
+  datasource:
+    url: jdbc:postgresql://concert-postgres:5432/booking_db
 
 openapi:
   service:

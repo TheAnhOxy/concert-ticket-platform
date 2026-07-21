@@ -6,6 +6,8 @@ spring:
     name: notification-service
   profiles:
     active: dev
+  datasource:
+    url: jdbc:postgresql://concert-postgres:5432/notification_db
 
 openapi:
   service:
