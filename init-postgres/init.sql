@@ -40,6 +40,8 @@ CREATE TABLE ticket_categories (
                                    name VARCHAR(100) NOT NULL,
                                    price NUMERIC(12, 2) NOT NULL,
                                    total_quantity INT NOT NULL,
+    -- Thêm cột status vào bảng vouchers
+                                   status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
                                    available_quantity INT NOT NULL
 );
 CREATE TABLE vouchers (
@@ -51,6 +53,7 @@ CREATE TABLE vouchers (
                           max_discount_amount NUMERIC(12, 2),
                           usage_limit INT NOT NULL,
                           start_time TIMESTAMP NOT NULL,
+                          status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'EXPIRED')),
                           end_time TIMESTAMP NOT NULL
 );
 INSERT INTO concerts (id, title, description, venue, start_time, status) VALUES
@@ -109,6 +112,18 @@ CREATE TABLE ticket_reservations (
                                      reserved_until TIMESTAMP NOT NULL,
                                      status VARCHAR(20) NOT NULL
 );
+CREATE TABLE voucher_reservations (
+                                      id SERIAL PRIMARY KEY,
+                                      booking_id INT REFERENCES bookings(id) ON DELETE CASCADE,
+                                      voucher_id INT NOT NULL, -- Do vouchers nằm ở core_db nên ở booking_db chỉ lưu ID tham chiếu logic
+                                      reserved_until TIMESTAMP NOT NULL,
+                                      status VARCHAR(20) NOT NULL CHECK (status IN ('RESERVED', 'EXPIRED', 'CONFIRMED')),
+                                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_bookings_user_id ON bookings(user_id);
+CREATE INDEX idx_bookings_status_expires ON bookings(status, expires_at);
+CREATE INDEX idx_reservations_status_time ON ticket_reservations(status, reserved_until);
+CREATE INDEX idx_voucher_reservations_status_time ON voucher_reservations(status, reserved_until);
 
 -- 5. Seed cho payment_db
 \c payment_db;
