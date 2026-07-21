@@ -60,9 +60,28 @@ INSERT INTO ticket_categories (id, concert_id, name, price, total_quantity, avai
                                                                                                     (1, 1, 'VIP VVIP', 2000000.00, 100, 100),
                                                                                                     (2, 1, 'Standard Zone A', 800000.00, 500, 500);
 
-INSERT INTO vouchers (id, code, discount_type, discount_value, min_order_value, usage_limit, start_time, end_time) VALUES
-    (1, 'GEEKUP2026', 'PERCENTAGE', 15.00, 500000.00, 50, '2026-07-01 00:00:00', '2026-08-30 23:59:59');
+INSERT INTO vouchers
+(id, code, discount_type, discount_value, min_order_value, usage_limit, start_time, end_time)
+VALUES
+    (1, 'GEEKUP2026', 'PERCENTAGE', 15.00, 500000.00, 50, '2026-07-01 00:00:00', '2026-08-30 23:59:59'),
 
+    (2, 'SUMMER2026', 'PERCENTAGE', 20.00, 300000.00, 100, '2026-06-01 00:00:00', '2026-08-31 23:59:59'),
+
+    (3, 'WELCOME100K', 'FIXED_AMOUNT', 100000.00, 500000.00, 200, '2026-07-01 00:00:00', '2026-12-31 23:59:59'),
+
+    (4, 'VIPCUSTOMER', 'PERCENTAGE', 25.00, 1000000.00, 30, '2026-07-15 00:00:00', '2026-09-15 23:59:59'),
+
+    (5, 'CONCERT50K', 'FIXED_AMOUNT', 50000.00, 200000.00, 500, '2026-07-01 00:00:00', '2026-10-01 23:59:59'),
+
+    (6, 'EARLYBIRD2026', 'PERCENTAGE', 10.00, 700000.00, 150, '2026-07-01 00:00:00', '2026-07-31 23:59:59'),
+
+    (7, 'TICKETSALE30', 'PERCENTAGE', 30.00, 1500000.00, 20, '2026-08-01 00:00:00', '2026-08-31 23:59:59'),
+
+    (8, 'NEWUSER2026', 'FIXED_AMOUNT', 75000.00, 300000.00, 300, '2026-07-01 00:00:00', '2026-12-31 23:59:59'),
+
+    (9, 'FANCLUB10', 'PERCENTAGE', 10.00, 400000.00, 80, '2026-07-10 00:00:00', '2026-09-30 23:59:59'),
+
+    (10, 'BIGCONCERT500', 'FIXED_AMOUNT', 500000.00, 3000000.00, 10, '2026-09-01 00:00:00', '2026-12-31 23:59:59');
 
 -- --- SEED CHO BOOKING_DB ---
 \c booking_db;
@@ -115,3 +134,22 @@ CREATE TABLE payments (
                           callback_data TEXT,
                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+\c notification_db;
+
+CREATE TABLE notifications (
+                               id SERIAL PRIMARY KEY,
+                               user_id INT NOT NULL,
+                               title VARCHAR(255) NOT NULL,
+                               message TEXT NOT NULL,
+                               type VARCHAR(50) NOT NULL CHECK (type IN ('BOOKING_SUCCESS', 'PAYMENT_SUCCESS', 'BOOKING_EXPIRED', 'SYSTEM_ANNOUNCEMENT')),
+                               is_read BOOLEAN DEFAULT FALSE,
+                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+
+-- Seed dữ liệu thông báo mẫu
+INSERT INTO notifications (id, user_id, title, message, type, is_read) VALUES
+                                                                           (1, 2, 'Đặt vé thành công!', 'Đơn hàng BKG-20260722-001 của bạn đã được giữ chỗ thành công. Vui lòng thanh toán trước hạn.', 'BOOKING_SUCCESS', FALSE),
+                                                                           (2, 2, 'Nhắc nhở thanh toán', 'Đơn hàng của bạn sắp hết hạn thanh toán trong 5 phút tới.', 'BOOKING_EXPIRED', FALSE);
