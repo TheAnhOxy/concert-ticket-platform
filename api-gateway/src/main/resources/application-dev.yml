@@ -38,7 +38,7 @@ spring:
           filters:
 #            - Authentication
 #          filters:
-#            - RewritePath=/bookings/(?<segment>.*), /$\{segment}
+            - RewritePath=/api/v1/bookings/(?<segment>.*), /bookings/${segment}
 #            - CustomizeFilter
         - id: payment-service
 #          uri: ${PAYMENT_SERVICE_URL:http://localhost:8085}
