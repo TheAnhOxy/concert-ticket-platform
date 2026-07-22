@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByIdempotencyKey(String idempotencyKey);
     Optional<Booking> findByBookingCode(String bookingCode);
+    List<Booking> findByUserId(Long userId);
 
     // Giả định Entity BookingItem chứa quantity, hoặc Booking có field tổng số lượng vé.
     //  query qua bảng trung gian (hoặc thay đổi cho khớp với Entit):
@@ -27,5 +28,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("statuses") List<BookingStatus> statuses
     );
 
-    boolean existsByUserIdAndVoucherCodeAndStatusIn(Long userId, String voucherCode, List<BookingStatus> statuses);
+        @Query(value = "SELECT COUNT(*) > 0 FROM bookings b WHERE b.user_id = :userId AND b.status IN :statuses AND b.promotion_snapshot->>'voucherCode' = :voucherCode", nativeQuery = true)
+    boolean existsByUserIdAndVoucherCodeAndStatusIn(
+            @Param("userId") Long userId,
+            @Param("voucherCode") String voucherCode,
+            @Param("statuses") List<String> statuses
+    );
 }

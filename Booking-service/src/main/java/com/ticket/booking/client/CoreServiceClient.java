@@ -26,4 +26,16 @@ public interface CoreServiceClient {
     void refundQuantity(@PathVariable("id") Long ticketCategoryId, @RequestParam("quantity") int quantity);
     @PostMapping("/vouchers/apply")
     BigDecimal applyAndDeductVoucher(@RequestParam("code") String code, @RequestParam("orderAmount") BigDecimal orderAmount);
+
+    @GetMapping("/ticket-categories/{id}/price")
+    BigDecimal getPrice(@PathVariable("id") Long id);
+
+    @PostMapping("/seats/reserve")
+    void reserveSeats(@RequestParam("seatIds") java.util.List<Long> seatIds, @RequestParam("ticketCategoryId") Long ticketCategoryId);
+
+    @PostMapping("/seats/release")
+    void releaseSeats(@RequestParam("seatIds") java.util.List<Long> seatIds);
+
+    @PostMapping("/seats/confirm")
+    void confirmSeats(@RequestParam("seatIds") java.util.List<Long> seatIds);
 }
