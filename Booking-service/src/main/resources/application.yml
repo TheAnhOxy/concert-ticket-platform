@@ -10,6 +10,17 @@ spring:
     url: jdbc:postgresql://ep-hidden-bar-azmsarvo-pooler.c-3.ap-southeast-1.aws.neon.tech/booking_db?sslmode=require&channel_binding=require
     username: neondb_owner
     password: npg_4NeM5xPfaAsY
+  task:
+    execution:
+      shutdown:
+        await-termination: true
+        await-termination-period: 15s
+    scheduling:
+      shutdown:
+        await-termination: true
+        await-termination-period: 15s
+    lifecycle:
+      timeout-per-shutdown-phase: 20s
   kafka:
     bootstrap-servers: localhost:9092
   jpa:

@@ -1,13 +1,33 @@
 package com.ticket.booking.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.ticket.booking.dto.request.BookingRequest;
+import com.ticket.booking.dto.response.BookingResponse;
+import com.ticket.booking.service.BookingService;
+// Giả định bạn có class ApiResponse chung trong project, nếu chưa có bạn có thể tự định nghĩa hoặc dùng chung gói
+import com.ticket.booking.dto.response.ApiResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/bookings")
+@RequiredArgsConstructor
 public class BookingController {
 
-    @GetMapping
-    public String getBooking(){
-        return "hiBooking";
+    private final BookingService bookingService;
+
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse> createBooking(@Valid @RequestBody BookingRequest request) {
+        BookingResponse response = bookingService.createBooking(request);
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .status(HttpStatus.CREATED.value())
+                .message("Giữ chỗ thành công! Vui lòng thanh toán trong vòng 10 phút.")
+                .data(response)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 }

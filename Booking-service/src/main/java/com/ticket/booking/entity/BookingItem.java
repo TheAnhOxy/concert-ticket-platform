@@ -1,13 +1,15 @@
 package com.ticket.booking.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "booking_items")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BookingItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

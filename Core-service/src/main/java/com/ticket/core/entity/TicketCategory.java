@@ -22,10 +22,11 @@ public class TicketCategory {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false)
+    @Column(name = "total_quantity", nullable = false)
     private Integer totalQuantity;
 
-    @Column(nullable = false)
+    // Số lượng còn lại (Tồn kho thực tế)
+    @Column(name = "available_quantity", nullable = false)
     private Integer availableQuantity;
     @Column(nullable = false, length = 20)
     private String status; // ACTIVE, INACTIVE

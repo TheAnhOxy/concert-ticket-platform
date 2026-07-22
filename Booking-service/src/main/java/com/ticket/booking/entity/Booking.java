@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+
 @Entity
 @Table(name = "bookings")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
@@ -23,6 +24,10 @@ public class Booking {
 
     @Column(unique = true, length = 30)
     private String bookingCode;
+
+    // BỔ SUNG TRƯỜNG IDEMPOTENCY KEY VÀO ENTITY
+    @Column(name = "idempotency_key", unique = true, length = 100)
+    private String idempotencyKey;
 
     @Column(name = "user_id", nullable = true)
     private Long userId;
@@ -49,22 +54,25 @@ public class Booking {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> priceSnapshot;
-
+    @Column(name = "final_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal finalAmount;
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> promotionSnapshot;
 
-    /** Danh sách các vé/hạng vé được đặt trong đơn hàng */
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BookingItem> bookingItems;
 
-    /** Danh sách các giữ chỗ tạm thời cho đơn hàng */
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<TicketReservation> ticketReservations;
+
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<VoucherReservation> voucherReservations;
+
     @Version
     private Long version;
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -1,7 +1,7 @@
 package com.ticket.booking.enums;
 
 public enum ReservationStatus {
-    LOCKED,
+    RESERVED,
     CONFIRMED,
     EXPIRED
 }

@@ -1,8 +1,11 @@
 package com.ticket.booking.enums;
 
 public enum BookingStatus {
-    PENDING,
-    CONFIRMED,
-    CANCELLED,
-    COMPLETED
+    RECEIVED,
+    WAITING_PAYMENT,
+    PAID,
+    COMPLETED,
+    EXPIRED,
+    FAILED,
+    CANCELLED
 }
