@@ -16,6 +16,8 @@ public class BookingRequest {
     @NotNull(message = "Concert ID không được để trống")
     private Long concertId;
 
+    private String voucherCode;
+
     private Long voucherId;
 
     @NotNull(message = "Ticket Category ID không được để trống")

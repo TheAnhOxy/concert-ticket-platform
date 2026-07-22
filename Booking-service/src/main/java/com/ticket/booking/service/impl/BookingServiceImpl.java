@@ -7,6 +7,7 @@ import com.ticket.booking.dto.response.BookingResponse;
 import com.ticket.booking.entity.Booking;
 import com.ticket.booking.entity.BookingItem;
 import com.ticket.booking.entity.TicketReservation;
+import com.ticket.booking.enums.BookingStatus;
 import com.ticket.booking.repository.BookingItemRepository;
 import com.ticket.booking.repository.BookingRepository;
 import com.ticket.booking.repository.TicketReservationRepository;
@@ -20,7 +21,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -151,6 +154,51 @@ public class BookingServiceImpl implements BookingService {
         } catch (Exception e) {
             log.error("Lỗi khi gọi Core Service để trừ kho: {}", e.getMessage());
             throw new RuntimeException("Trừ kho DB thất bại (có thể do đã hết vé)!");
+        }
+    }
+
+    private void applyVoucher(BookingRequest request, Booking booking) {
+        if (request.getVoucherCode() == null || request.getVoucherCode().trim().isEmpty()) {
+            booking.setFinalAmount(booking.getTotalAmount()); // Không có mã -> Trả đủ
+            return;
+        }
+
+        String voucherCode = request.getVoucherCode().trim();
+
+        // 1. CHỐNG SPAMMING (1 người chỉ dùng 1 mã 1 lần)
+        // Cần một query đếm xem user này đã có đơn hàng nào (PAID/WAITING) dùng mã này chưa
+        boolean hasUsed = bookingRepository.existsByUserIdAndVoucherCodeAndStatusIn(
+                request.getUserId(),
+                voucherCode,
+                List.of(BookingStatus.PAID, BookingStatus.WAITING_PAYMENT)
+        );
+        if (hasUsed) {
+            throw new RuntimeException("Bạn đã sử dụng mã giảm giá này rồi!");
+        }
+
+        // 2. GỌI CORE-SERVICE ĐỂ THẨM ĐỊNH & TRỪ KHO VOUCHER (Atomic/Redisson Lock)
+        // Core-service sẽ trả về số tiền được giảm nếu hợp lệ
+        try {
+            // Data truyền sang Core: Mã Voucher, Tổng tiền đơn hàng
+            BigDecimal discountAmount = coreServiceClient.applyAndDeductVoucher(
+                    voucherCode,
+                    booking.getTotalAmount()
+            );
+
+            // 3. TÍNH TOÁN LẠI FINAL AMOUNT TẠI BACKEND
+            BigDecimal finalAmount = booking.getTotalAmount().subtract(discountAmount);
+            if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                finalAmount = BigDecimal.ZERO; // Không cho âm tiền
+            }
+
+            booking.setPromotionSnapshot(voucherCode); // Lưu vết mã đã dùng
+            booking.setFinalAmount(finalAmount);
+
+            log.info("Áp dụng mã {} thành công. Giảm {} VNĐ", voucherCode, discountAmount);
+
+        } catch (Exception e) {
+            log.error("Lỗi áp dụng voucher: {}", e.getMessage());
+            throw new RuntimeException("Mã giảm giá không hợp lệ, chưa đạt điều kiện hoặc đã hết lượt sử dụng!");
         }
     }
 }

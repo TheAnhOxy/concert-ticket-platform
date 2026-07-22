@@ -15,9 +15,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByIdempotencyKey(String idempotencyKey);
     Optional<Booking> findByBookingCode(String bookingCode);
 
-    // BỔ SUNG: Tính tổng số vé một user đã đặt (bao gồm cả vé đang chờ thanh toán) cho 1 concert
     // Giả định Entity BookingItem chứa quantity, hoặc Booking có field tổng số lượng vé.
-    // Dưới đây là ví dụ query qua bảng trung gian (hoặc thay đổi cho khớp với Entity của bạn):
+    //  query qua bảng trung gian (hoặc thay đổi cho khớp với Entit):
     @Query("SELECT COALESCE(SUM(bi.quantity), 0) FROM Booking b JOIN b.bookingItems bi " +
             "WHERE b.userId = :userId " +
             "AND b.concertId = :concertId " +
@@ -27,4 +26,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("concertId") Long concertId,
             @Param("statuses") List<BookingStatus> statuses
     );
+
+    boolean existsByUserIdAndVoucherCodeAndStatusIn(Long userId, String voucherCode, List<BookingStatus> statuses);
 }

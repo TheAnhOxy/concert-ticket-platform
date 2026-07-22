@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
+
 // Trỏ URL về cổng 8082 của core-service (thay đổi linh hoạt qua config/eureka)
 @FeignClient(name = "core-service", url = "${core.service.url:http://localhost:8082}")
 public interface CoreServiceClient {
@@ -22,4 +24,6 @@ public interface CoreServiceClient {
     //  hoàn kho (Core Service cộng lại vé khi đơn hết hạn)
     @PostMapping("/ticket-categories/{id}/refund")
     void refundQuantity(@PathVariable("id") Long ticketCategoryId, @RequestParam("quantity") int quantity);
+    @PostMapping("/vouchers/apply")
+    BigDecimal applyAndDeductVoucher(@RequestParam("code") String code, @RequestParam("orderAmount") BigDecimal orderAmount);
 }
