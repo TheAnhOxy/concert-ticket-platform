@@ -17,3 +17,9 @@ spring:
             allowedHeaders: "*"
             allowedMethods: "*"
             allowCredentials: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway,health,info
