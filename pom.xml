@@ -36,6 +36,7 @@
 
 	<modules>
 		<module>api-gateway</module>
+		<module>Core-service</module>
 		<module>Payment-service</module>
 		<module>Booking-service</module>
 		<module>Notification-service</module>
