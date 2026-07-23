@@ -19,43 +19,27 @@ services:
     depends_on:
       - concert-zookeeper
     ports:
-      - "9092:9092" # <-- Đảm bảo mở port này ra máy local
+      - "9092:29092" # Port 9092 ở máy local trỏ vào EXTERNAL listener 29092
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: concert-zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      # QUAN TRỌNG: Cho phép máy local kết nối vào localhost:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://concert-kafka:9092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     networks:
       - concert-net
 
   # =====================
-  # INFRASTRUCTURE: REDIS & POSTGRESQL
+  # INFRASTRUCTURE: REDIS
   # =====================
   concert-redis:
     image: redis:7-alpine
     container_name: concert-redis
     ports:
       - "6379:6379"
-    networks:
-      - concert-net
-
-  concert-postgres:
-    image: postgres:15-alpine
-    container_name: concert-postgres
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
-    volumes:
-      - concert-pg-data:/var/lib/postgresql/data
-      - ./init-postgres:/docker-entrypoint-initdb.d
     networks:
       - concert-net
 
@@ -76,13 +60,13 @@ services:
       - SPRING_DATA_REDIS_HOST=concert-redis
       - SPRING_DATA_REDIS_PORT=6379
     depends_on:
-      - core-service      # <-- Sửa thành core-service (hoặc concert-core-service tùy tên bạn đặt ở dưới)
+      - core-service
       - concert-redis
     networks:
       - concert-net
 
   # =====================
-  # MICROSERVICES
+  # MICROSERVICES (Kết nối PostgreSQL Cloud Neon DB)
   # =====================
   auth-service:
     build: ./Auth-service
@@ -94,13 +78,10 @@ services:
       - SPRING_DATA_REDIS_HOST=concert-redis
       - SPRING_DATA_REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://concert-postgres:5432/auth_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
     depends_on:
       - concert-redis
       - concert-kafka
-      - concert-postgres
     networks:
       - concert-net
 
@@ -114,12 +95,9 @@ services:
       - SPRING_DATA_REDIS_HOST=concert-redis
       - SPRING_DATA_REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://concert-postgres:5432/core_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
     depends_on:
       - concert-kafka
-      - concert-postgres
       - concert-redis
     networks:
       - concert-net
@@ -132,12 +110,11 @@ services:
     environment:
       - SERVER_PORT=8083
       - KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
+      - CORE_SERVICE_URL=http://concert-core-service:8082
       - REDIS_HOST=concert-redis
       - SPRING_DATA_REDIS_HOST=concert-redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://concert-postgres:5432/booking_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
     deploy:
       resources:
         limits:
@@ -145,7 +122,6 @@ services:
     depends_on:
       - concert-redis
       - concert-kafka
-      - concert-postgres
     networks:
       - concert-net
 
@@ -156,14 +132,10 @@ services:
       - "8084:8084"
     environment:
       - SERVER_PORT=8084
-      - DB_URL=jdbc:postgresql://concert-postgres:5432/postgres
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://concert-postgres:5432/payment_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
     depends_on:
-      - concert-postgres
+      - concert-kafka
     networks:
       - concert-net
 
@@ -175,19 +147,12 @@ services:
     environment:
       - SERVER_PORT=8085
       - KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://concert-postgres:5432/notification_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=concert-kafka:9092
     depends_on:
       - concert-kafka
-      - concert-postgres
     networks:
       - concert-net
 
 networks:
   concert-net:
     driver: bridge
-
-volumes:
-  concert-pg-data:
-    driver: local
