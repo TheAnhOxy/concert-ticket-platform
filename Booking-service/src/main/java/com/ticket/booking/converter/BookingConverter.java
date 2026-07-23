@@ -25,14 +25,40 @@ public class BookingConverter {
             return null;
         }
 
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (booking.getPromotionSnapshot() != null) {
+            Object discount = booking.getPromotionSnapshot().get("discountAmount");
+            if (discount != null) {
+                if (discount instanceof BigDecimal) {
+                    discountAmount = (BigDecimal) discount;
+                } else {
+                    try {
+                        discountAmount = new BigDecimal(discount.toString());
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        java.util.List<Long> seatIdsList = null;
+        if (booking.getSeatIds() != null && !booking.getSeatIds().trim().isEmpty()) {
+            seatIdsList = java.util.Arrays.stream(booking.getSeatIds().split(","))
+                    .map(Long::parseLong)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
         return BookingResponse.builder()
                 .id(booking.getId())
                 .bookingCode(booking.getBookingCode())
                 .userId(booking.getUserId())
                 .concertId(booking.getConcertId())
                 .totalAmount(booking.getTotalAmount())
+                .discountAmount(discountAmount)
+                .finalAmount(booking.getFinalAmount())
                 .paidAmount(booking.getPaidAmount())
                 .status(booking.getStatus() != null ? booking.getStatus().name() : null)
+                .seatIds(seatIdsList)
                 .paymentMethod(booking.getPaymentMethod())
                 .paymentDueAt(booking.getPaymentDueAt())
                 .contactName(booking.getContactName())
@@ -42,16 +68,24 @@ public class BookingConverter {
                 .build();
     }
 
-    public Booking toBookingEntity(BookingRequest request, String bookingCode, LocalDateTime expiresAt) {
+    public Booking toBookingEntity(BookingRequest request, String bookingCode, BigDecimal totalAmount, BigDecimal finalAmount, LocalDateTime expiresAt) {
+        String seatIdsStr = null;
+        if (request.getSeatIds() != null && !request.getSeatIds().isEmpty()) {
+            seatIdsStr = request.getSeatIds().stream()
+                    .map(Object::toString)
+                    .collect(java.util.stream.Collectors.joining(","));
+        }
+
         return Booking.builder()
                 .bookingCode(bookingCode)
                 .idempotencyKey(request.getIdempotencyKey())
                 .userId(request.getUserId())
                 .concertId(request.getConcertId())
-                .totalAmount(request.getTotalAmount())
-                .finalAmount(request.getFinalAmount())
+                .totalAmount(totalAmount)
+                .finalAmount(finalAmount)
                 .paidAmount(BigDecimal.ZERO)
                 .status(BookingStatus.WAITING_PAYMENT)
+                .seatIds(seatIdsStr)
                 .paymentMethod(request.getPaymentMethod())
                 .paymentDueAt(expiresAt)
                 .expiresAt(expiresAt) // <--- Gán thêm giá trị này để khớp cột expires_at trong DB
@@ -61,13 +95,13 @@ public class BookingConverter {
                 .build();
     }
 
-    public BookingItem toBookingItemEntity(Booking booking, BookingRequest request) {
+    public BookingItem toBookingItemEntity(Booking booking, BookingRequest request, BigDecimal unitPrice) {
         return BookingItem.builder()
                 .booking(booking)
                 .ticketCategoryId(request.getTicketCategoryId())
                 .quantity(request.getQuantity())
-                .unitPrice(request.getUnitPrice())
-                .subtotal(request.getUnitPrice().multiply(BigDecimal.valueOf(request.getQuantity())))
+                .unitPrice(unitPrice)
+                .subtotal(unitPrice.multiply(BigDecimal.valueOf(request.getQuantity())))
                 .build();
     }
 

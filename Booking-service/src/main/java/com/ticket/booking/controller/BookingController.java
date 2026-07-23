@@ -30,4 +30,28 @@ public class BookingController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse> getBookingsByUserId(@PathVariable Long userId) {
+        java.util.List<BookingResponse> response = bookingService.getBookingsByUserId(userId);
+        ApiResponse apiResponse = ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message("Lấy danh sách đơn đặt vé thành công!")
+                .data(response)
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    @PutMapping("/{bookingId}/status")
+    public ResponseEntity<ApiResponse> updateBookingStatus(
+            @PathVariable Long bookingId,
+            @RequestParam("status") String status) {
+        BookingResponse response = bookingService.updateBookingStatus(bookingId, status);
+        ApiResponse apiResponse = ApiResponse.builder()
+                .status(HttpStatus.OK.value())
+                .message("Cập nhật trạng thái đơn hàng thành công!")
+                .data(response)
+                .build();
+        return ResponseEntity.ok(apiResponse);
+    }
 }

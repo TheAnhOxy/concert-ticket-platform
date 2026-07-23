@@ -51,6 +51,9 @@ public class Booking {
     private String contactEmail;
     private String contactPhone;
 
+    @Column(name = "seat_ids")
+    private String seatIds;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> priceSnapshot;

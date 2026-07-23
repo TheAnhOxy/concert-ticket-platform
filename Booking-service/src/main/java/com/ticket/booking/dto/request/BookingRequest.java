@@ -27,16 +27,6 @@ public class BookingRequest {
     @Min(value = 1, message = "Số lượng vé mua tối thiểu là 1")
     private Integer quantity;
 
-    @NotNull(message = "Đơn giá không được để trống")
-    private BigDecimal unitPrice;
-
-    @NotNull(message = "Tổng tiền chưa giảm không được để trống")
-    private BigDecimal totalAmount;
-
-    private BigDecimal discountAmount = BigDecimal.ZERO;
-
-    @NotNull(message = "Số tiền thanh toán cuối cùng không được để trống")
-    private BigDecimal finalAmount;
 
     @NotBlank(message = "Idempotency Key là bắt buộc để chống duplicate request")
     private String idempotencyKey;

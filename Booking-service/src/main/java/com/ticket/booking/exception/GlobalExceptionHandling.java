@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.ConstraintViolationException;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -51,12 +52,12 @@ public class GlobalExceptionHandling {
                                             """
                             ))})
     })
-    public ErrorResponse handleValidationException(Exception e, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleValidationException(Exception e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setStatus(BAD_REQUEST.value());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
-
+ 
         String message = e.getMessage();
         if (e instanceof MethodArgumentNotValidException) {
             int start = message.lastIndexOf("[") + 1;
@@ -74,8 +75,8 @@ public class GlobalExceptionHandling {
             errorResponse.setError("Invalid Data");
             errorResponse.setMessage(message);
         }
-
-        return errorResponse;
+ 
+        return ResponseEntity.status(BAD_REQUEST).body(errorResponse);
     }
 
     /**
@@ -103,15 +104,15 @@ public class GlobalExceptionHandling {
                                             """
                             ))})
     })
-    public ErrorResponse handleAccessDeniedException(Exception e, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(Exception e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setStatus(FORBIDDEN.value());
         errorResponse.setError(FORBIDDEN.getReasonPhrase());
         errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+ 
+        return ResponseEntity.status(FORBIDDEN).body(errorResponse);
     }
 
     /**
@@ -139,15 +140,15 @@ public class GlobalExceptionHandling {
                                             """
                             ))})
     })
-    public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setStatus(NOT_FOUND.value());
         errorResponse.setError(NOT_FOUND.getReasonPhrase());
         errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+ 
+        return ResponseEntity.status(NOT_FOUND).body(errorResponse);
     }
 
     /**
@@ -175,15 +176,15 @@ public class GlobalExceptionHandling {
                                             """
                             ))})
     })
-    public ErrorResponse handleDuplicateKeyException(InvalidDataException e, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleDuplicateKeyException(InvalidDataException e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setStatus(CONFLICT.value());
         errorResponse.setError(CONFLICT.getReasonPhrase());
         errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+ 
+        return ResponseEntity.status(CONFLICT).body(errorResponse);
     }
 
     /**
@@ -193,6 +194,30 @@ public class GlobalExceptionHandling {
      * @param request
      * @return error
      */
+    @ExceptionHandler(feign.FeignException.class)
+    public ResponseEntity<ErrorResponse> handleFeignException(feign.FeignException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setStatus(e.status() > 0 ? e.status() : 500);
+        errorResponse.setError("Core Service Error");
+ 
+        String content = e.contentUTF8();
+        if (content != null && content.contains("\"message\"")) {
+            try {
+                int start = content.indexOf("\"message\":\"") + 11;
+                int end = content.indexOf("\"", start);
+                errorResponse.setMessage(content.substring(start, end));
+            } catch (Exception ex) {
+                errorResponse.setMessage(content);
+            }
+        } else {
+            errorResponse.setMessage(e.getMessage());
+        }
+ 
+        return ResponseEntity.status(e.status() > 0 ? e.status() : 500).body(errorResponse);
+    }
+ 
     @ExceptionHandler(Exception.class)
     @ApiResponses(value = {
             @ApiResponse(responseCode = "500", description = "Internal Server Error",
@@ -211,15 +236,15 @@ public class GlobalExceptionHandling {
                                             """
                             ))})
     })
-    public ErrorResponse handleException(Exception e, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleException(Exception e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setStatus(INTERNAL_SERVER_ERROR.value());
         errorResponse.setError(INTERNAL_SERVER_ERROR.getReasonPhrase());
         errorResponse.setMessage(e.getMessage());
-
-        return errorResponse;
+ 
+        return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
     @Getter

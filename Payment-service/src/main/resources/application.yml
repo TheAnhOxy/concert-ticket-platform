@@ -21,6 +21,8 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: localhost:9092
 
 openapi:
   service:
